@@ -33,6 +33,8 @@
                   [metosin/lokit "0.1.0"]
 
                   [hiccup "1.0.5"]
+                  [clj-http "2.0.0"]
+                  [enlive "1.1.6"]
                   [com.novemberain/monger "3.0.1"]
 
                   [cljs-http "0.1.37"]
