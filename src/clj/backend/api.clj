@@ -23,8 +23,10 @@
             baseurl (str (.getProtocol url') "://" (.getHost url'))
             html (html/html-resource (:body res))
             icons (into {} (map (juxt :sizes :href) (map :attrs (html/select html [:head [:link (html/attr-has :rel "icon")]]))))
-            icon (or (get icons "32x32")
-                     (get icons "64x64"))
+            icon (or (get icons "96x96")
+                     (get icons "64x64")
+                     (get icons "32x32")
+                     (get icons "16x16"))
             icon-url (cond
                        (.startsWith icon "http") icon
                        (.startsWith icon "/") (str baseurl icon)
