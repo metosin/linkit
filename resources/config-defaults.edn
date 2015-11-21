@@ -1,0 +1,5 @@
+{:ui {:dev-tools true}
+ :kekkonen {:dev? true}
+ :http {:port 3000}
+ :nrepl nil
+ :mongo {:url "mongodb://127.0.0.1/linkit"}}
