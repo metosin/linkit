@@ -10,12 +10,6 @@
   {:pre [(keyword? action)]}
   (string/replace (string/join "/" ((juxt namespace name) action)) #"\." "/"))
 
-(defn json? [content-type]
-  (.startsWith content-type "application/json"))
-
-; Ideas:
-; - Coerce responses based on Schema (json)
-
 (defn create-client [{:keys [base-uri] :as opts}]
   opts)
 
@@ -40,7 +34,6 @@
       :kekkonen {:client client
                  :action action
                  :data data}
-      ; FIXME:
       :transit-opts {:encoding-opts {:handlers transit/writers}
                      :decoding-opts {:handlers transit/readers}}})))
 

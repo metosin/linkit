@@ -37,7 +37,7 @@
 (comment
   (get-info "http://clojars.org"))
 
-(defnk ^:command add-link [db, data :- domain/NewLink]
+(defnk ^:command add [db, data :- domain/NewLink]
   (mc/insert db :links (merge data
                               (get-info (:url data))
                               {:dateTime (dates/now)
@@ -46,7 +46,7 @@
                                :likeUsers #{}}))
   (success {:status :ok}))
 
-(defnk ^:command like-link
+(defnk ^:command like
   "Adds like to the link if user hasn't liked this link already."
   [db, [:data link-id :- s/Str user :- s/Str]]
   (mc/update db :links
@@ -56,7 +56,7 @@
               $inc {:likes 1}})
   (success {:status :ok}))
 
-(defnk ^:command dislike-link
+(defnk ^:command dislike
   "Removes users like from the link."
   [db, [:data link-id :- s/Int user :- s/Int]]
   (mc/update db :links

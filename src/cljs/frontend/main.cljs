@@ -29,11 +29,13 @@
          likes
          [:button {:type "button"
                    :on-click (fn [e]
-                               (om/transact! this `[(link/like ~props)]))}
+                               (om/transact! this `[(links/like {:link-id ~(:_id props)
+                                                                 :user "juho"})]))}
           "+"]
          [:button {:type "button"
                    :on-click (fn [e]
-                               (om/transact! this `[(link/dislike ~props)]))}
+                               (om/transact! this `[(links/dislike {:link-id ~(:_id props)
+                                                                    :user "juho"})]))}
           "-"]
          [:a {:href url}
           (if favicon [:img {:src favicon :width 32 :height 32}])
@@ -69,50 +71,47 @@
 
 (defmulti mutate om/dispatch)
 
-(defmethod mutate 'link/like
-  [{:keys [state]} _ {:keys [_id]}]
-  {:action
-   (fn []
-     (swap! state update-in
-            [:links/by-id _id :likes]
-            inc))})
+(defmethod mutate :default [_ x params]
+  {:remote true})
 
-(defmethod mutate 'link/dislike
-  [{:keys [state]} _ {:keys [_id]}]
-  {:action
-   (fn []
-     (swap! state update-in
-            [:links/by-id _id :likes]
-            dec))})
+(def query-chan (chan))
+(def command-chan (chan))
 
-(defn search-loop [c]
+(defn query-loop [c]
   (go
     (loop [[query cb] (<! c)]
-      (println query)
+      ; FIXME: Hardcoded to links/all query
       (let [{:keys [body]} (<! (cqrs/query client query))]
-        (println body)
         (cb {:links/by-id (into {} (map (juxt :_id identity) body))
              :links/all (into [] (map (fn [{:keys [_id]}] [:links/by-id _id]) body))}))
       (recur (<! c)))))
 
-(defn send-to-chan [c]
-  (fn [{:keys [query]} cb]
+(defn command-loop [c]
+  (go
+    (loop [[[command params] cb] (<! c)]
+      (println command params)
+      (let [{:keys [body]} (<! (cqrs/command client (keyword command) params))]
+        (println body))
+      (recur (<! c)))))
+
+(defn send-to-chan [queries commands]
+  (fn [{:keys [query remote] :as y} cb]
     (when query
       (let [{[x] :children} (om/query->ast query)]
-        (put! c [(:key x) cb])))))
+        (put! queries [(:key x) cb])))
+    (when remote
+      (put! commands [(first remote) cb]))))
 
-(def send-chan (chan))
-
-(search-loop send-chan)
+(query-loop query-chan)
+(command-loop command-chan)
 
 (def parser (om/parser {:read read :mutate mutate}))
 (def reconciler (om/reconciler {:state app-state
                                 :parser parser
-                                :send (send-to-chan send-chan)
-                                :remotes [:remote :query]}))
+                                :send (send-to-chan query-chan command-chan)
+                                :remotes [:remote :query :command]}))
 
 (defn init! []
-  (js/console.log "main init!")
   (om/add-root! reconciler Main (js/document.getElementById "app")))
 
 (init!)
