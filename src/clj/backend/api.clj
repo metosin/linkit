@@ -13,7 +13,7 @@
             [potpuri.core :as p]
             [net.cgrand.enlive-html :as html]))
 
-(defnk ^:query get-links [db]
+(defnk ^:query all [db]
   (success (mc/find-maps db :links nil {:likeUsers 0})))
 
 (defn get-info [url]

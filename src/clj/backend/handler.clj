@@ -13,9 +13,9 @@
   (cqrs-api {:swagger {:info {:title "Linkit"}}
              :swagger-ui {:path "/api-docs"}
              :core {:handlers {:foo {:ping #'ping}
-                               :api 'backend.api}
+                               :links 'backend.api}
                     :context (palikka/create-context system)}
-             :mw {:format {:params-opts {:transit-json {:options {:handlers transit/readers}}}
+             :mw {:format {:params-opts {:transit-json {:handlers transit/readers}}
                            :response-opts {:transit-json {:handlers transit/writers}}}}}))
 
 (defn create-handler [env system]

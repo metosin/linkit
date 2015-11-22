@@ -38,7 +38,7 @@
                   [com.novemberain/monger "3.0.1"]
 
                   [cljs-http "0.1.37"]
-                  [org.omcljs/om "1.0.0-alpha22"]
+                  [org.omcljs/om "1.0.0-alpha23"]
                   [sablono "0.4.0"]
 
                   [org.webjars.bower/font-awesome "4.4.0"]

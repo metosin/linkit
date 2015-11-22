@@ -11,9 +11,8 @@
 
 (defn unparse-iso [d]
   ; This is RFC3339?
-  ; TODO:
-  (println "unparse-iso" d)
-  #?(:cljs (str (.getUTCFullYear d)
+  #?(:clj  (.toString (.withZone d (org.joda.time.DateTimeZone/forID "UTC")))
+     :cljs (str (.getUTCFullYear d)
                 "-" (gs/padNumber (inc (.getUTCMonth d)) 2)
                 "-" (gs/padNumber (.getUTCDate d) 2)
                 "T" (gs/padNumber (.getUTCHours d) 2)
@@ -23,12 +22,10 @@
                 "Z")))
 
 (defn parse-iso [s]
-  ; TODO:
-  #?(:clj  "foo"
+  #?(:clj  (org.joda.time.DateTime/parse s)
      :cljs (goog.date.UtcDateTime.fromIsoString s)))
 
 (defn unparse-local-date [x]
-  (println "unparse-local-date" x)
   #?(:clj  (.toString x)
      :cljs (.toIsoString x true false)))
 
