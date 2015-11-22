@@ -16,6 +16,9 @@
 (defnk ^:query all [db]
   (success (mc/find-maps db :links nil {:likeUsers 0})))
 
+(defnk ^:query by-id [db [:data link-id]]
+  (success (mc/find-map-by-id db :links link-id {:likeUsers 0})))
+
 (defn get-info [url]
   (let [res (http/get url {:as :stream})]
     (if (ok? res)
@@ -58,7 +61,7 @@
 
 (defnk ^:command dislike
   "Removes users like from the link."
-  [db, [:data link-id :- s/Int user :- s/Int]]
+  [db, [:data link-id :- s/Str user :- s/Str]]
   (mc/update db :links
              {:_id link-id
               :likeUsers user}
