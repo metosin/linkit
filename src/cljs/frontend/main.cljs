@@ -29,24 +29,27 @@
           {:keys [user/name]} (om/shared this)]
       (html
         [:div.link
-         likes
+         [:span.likes likes]
          (if name
-           [:button {:type "button"
-                     :on-click (fn [e]
-                                 (om/transact! this `[(links/like {:link-id ~_id
-                                                                   :user ~name})
-                                                      [:links/by-id ~_id]]))}
-            "+"])
-         (if name
-           [:button {:type "button"
-                     :on-click (fn [e]
-                                 (om/transact! this `[(links/dislike {:link-id ~_id
-                                                                      :user ~name})
-                                                      [:links/by-id ~_id]]))}
-            "-"])
-         [:a {:href url}
-          (if favicon [:img {:src favicon :width 32 :height 32}])
-          title]]))))
+           [:div.buttons
+            [:button {:type "button"
+                      :on-click (fn [e]
+                                  (om/transact! this `[(links/like {:link-id ~_id
+                                                                    :user ~name})
+                                                       [:links/by-id ~_id]]))}
+             "+"]
+            [:button {:type "button"
+                      :on-click (fn [e]
+                                  (om/transact! this `[(links/dislike {:link-id ~_id
+                                                                       :user ~name})
+                                                       [:links/by-id ~_id]]))}
+             "-"]])
+         (if favicon
+           [:img {:src favicon :width 32 :height 32}]
+           [:div.favicon-placeholder])
+         [:a {:href url :target "new"}
+          [:span.title title]
+          [:span.href "(" url ")"]]]))))
 
 (def link (om/factory Link {:keyfn :_id}))
 
@@ -59,19 +62,21 @@
   (render [this]
     (html
       (let [{:keys [name]} (om/get-state this)]
-        [:form
-         {:on-submit (fn [e]
-                       (.preventDefault e)
-                       (.stopPropagation e)
-                       (om/transact! this `[(user/set {:name ~name})
-                                            :user/name]))}
+        [:div
+         {:style {:margin-bottom "40px"}}
          [:h1 "Please identify yourself to transact with the system:"]
-         [:input {:type "text"
-                  :value name
-                  :on-change (fn [e]
-                               (om/update-state! this assoc :name (.. e -target -value)))}]
-         [:button {:type "submit"}
-          "Identify"]]))))
+         [:form
+          {:on-submit (fn [e]
+                        (.preventDefault e)
+                        (.stopPropagation e)
+                        (om/transact! this `[(user/set {:name ~name})
+                                             :user/name]))}
+          [:input {:type "text"
+                   :value name
+                   :on-change (fn [e]
+                                (om/update-state! this assoc :name (.. e -target -value)))}]
+          [:button {:type "submit"}
+           "Identify"]]]))))
 
 (def login (om/factory Login))
 
@@ -81,16 +86,20 @@
          nil)
 
   Object
+  (init-state [_]
+    {:url "http://"})
+
   (render [this]
     (let [{:keys [url]} (om/get-state this)]
       (html
         [:form
-         {:on-submit (fn [e]
+         {:style {:margin-top "40px"}
+          :on-submit (fn [e]
                        (.preventDefault e)
                        (.stopPropagation e)
                        (om/transact! this `[(links/add {:url ~url})
                                             :links/all])
-                       (om/update-state! this assoc :url nil))}
+                       (om/update-state! this assoc :url "http://"))}
          [:input {:type "text"
                   :value url
                   :on-change (fn [e]
@@ -113,7 +122,7 @@
         [:div
          (if name
            [:h1 "Hello " name
-            [:button
+            [:button.pull-right
              {:type "button"
               :on-click #(om/transact! this `[(user/reset)
                                               :user/name])}

@@ -12,7 +12,7 @@ html, body, #app {
 
 html, body {
   font-family: "Roboto";
-  font-size: 14px;
+  font-size: 18px;
   color: @text-color;
 }
 
@@ -21,5 +21,84 @@ html, body {
 }
 
 #app {
-  flex: 1;
+  width: 600px;
+  margin: 0 auto;
+}
+
+input[type=text] {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+
+  font-family: "Roboto";
+  font-size: 18px;
+}
+
+button {
+  border: 1px solid #888;
+  padding: 8px 12px;
+
+  font-family: "Roboto";
+  font-size: 18px;
+}
+
+form {
+  display: flex;
+
+  input {
+    flex: 1;
+  }
+}
+
+.links {
+  .likes {
+    font-size: 3em;
+    margin-right: 10px;
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column;
+
+    button {
+      flex: 1;
+      padding: 5px 10px;
+      background: none;
+      border: none;
+
+      &:hover {
+        background: #ccc;
+      }
+    }
+  }
+
+  a {
+    color: #444;
+    text-decoration: none;
+    flex: 1;
+
+    &:hover {
+      .title {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .title {
+    font-size: 1.5em;
+    margin-right: 10px;
+  }
+
+  .href {
+    color: #888;
+  }
+
+  .favicon-placeholder {
+    width: 32px;
+    height: 32px;
+  }
 }
