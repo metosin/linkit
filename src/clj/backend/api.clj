@@ -29,11 +29,13 @@
             icon (or (get icons "96x96")
                      (get icons "64x64")
                      (get icons "32x32")
-                     (get icons "16x16"))
-            icon-url (cond
-                       (.startsWith icon "http") icon
-                       (.startsWith icon "/") (str baseurl icon)
-                       :else (str baseurl "/" icon))]
+                     (get icons "16x16")
+                     (get icons nil))
+            icon-url (if icon
+                       (cond
+                         (.startsWith icon "http") icon
+                         (.startsWith icon "/") (str baseurl icon)
+                         :else (str baseurl "/" icon)))]
         {:title (html/text (first (html/select html [:head :title])))
          :favicon icon-url}))))
 
