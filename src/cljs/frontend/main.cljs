@@ -75,6 +75,31 @@
 
 (def login (om/factory Login))
 
+(defui NewLink
+  static om/IQuery
+  (query [this]
+         nil)
+
+  Object
+  (render [this]
+    (let [{:keys [url]} (om/get-state this)]
+      (html
+        [:form
+         {:on-submit (fn [e]
+                       (.preventDefault e)
+                       (.stopPropagation e)
+                       (om/transact! this `[(links/add {:url ~url})
+                                            :links/all])
+                       (om/update-state! this assoc :url nil))}
+         [:input {:type "text"
+                  :value url
+                  :on-change (fn [e]
+                               (om/update-state! this assoc :url (.. e -target -value)))}]
+         [:button {:type "submit"}
+          "Add link"]]))))
+
+(def new-link (om/factory NewLink))
+
 (defui Main
   static om/IQuery
   (query [this]
@@ -96,7 +121,8 @@
            (login))
          [:div.links
           (for [x all]
-            (link x))]]))))
+            (link x))
+          (new-link)]]))))
 
 (defmulti read om/dispatch)
 
