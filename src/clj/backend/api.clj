@@ -43,13 +43,16 @@
   (get-info "http://clojars.org"))
 
 (defnk ^:command add [db, data :- domain/NewLink]
-  (mc/insert db :links (merge data
-                              (get-info (:url data))
-                              {:dateTime (dates/now)
-                               :_id (str (org.bson.types.ObjectId.))
-                               :likes 0
-                               :likeUsers #{}}))
-  (success {:status :ok}))
+  (try
+    (mc/insert db :links (merge data
+                                (get-info (:url data))
+                                {:dateTime (dates/now)
+                                 :_id (str (org.bson.types.ObjectId.))
+                                 :likes 0
+                                 :likeUsers #{}}))
+    (success {:status :ok})
+    (catch Exception e
+      (failure {:status :error}))))
 
 (defnk ^:command like
   "Adds like to the link if user hasn't liked this link already."
