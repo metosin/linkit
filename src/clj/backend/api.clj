@@ -1,7 +1,7 @@
 (ns backend.api
   (:require [common.domain :as domain]
             [kekkonen.cqrs :refer :all]
-            [plumbing.core :refer [defnk]]
+            [plumbing.core :refer [fnk defnk]]
             [schema.core :as s]
             [metosin.dates :as dates]
             [monger.operators :refer :all]
@@ -54,9 +54,38 @@
     (catch Exception e
       (failure {:status :error}))))
 
+(defn load-link [_]
+  (fnk [db [:data link-id :- s/Str] :as ctx]
+    (if-let [link  (mc/find-map-by-id db :links link-id)]
+      (assoc-in ctx [:entity :link] link)
+      (failure! {:status :link-doesnt-exist
+                 :link-id link-id}))))
+
+(defn require-liked [liked?]
+  (fnk [[:entity [:link likeUsers]]
+        [:data user]
+        :as context]
+    (println likeUsers user liked?)
+    (if (= liked? (contains? (set likeUsers) user))
+      context)))
+
+(defn require-liked-or-fail [liked?]
+  (some-fn
+    (require-liked liked?)
+    (fn [context]
+      (failure! {:status (if liked? :cant-dislike-not-liked :cant-like-already-liked)
+                 :liked? liked?}))))
+
 (defnk ^:command like
   "Adds like to the link if user hasn't liked this link already."
+  {::load-link true
+   ::liked? false}
   [db, [:data link-id :- s/Str user :- s/Str]]
+  ; This is only executed if pre-requisitest are filled:
+  ; - Link exists
+  ; - User doesn't like this link already
+  ;
+  ; Due to Mongo, the update is idempotent
   (mc/update db :links
              {:_id link-id
               :likeUsers {$ne user}}
@@ -66,6 +95,8 @@
 
 (defnk ^:command dislike
   "Removes users like from the link."
+  {::load-link true
+   ::liked? true}
   [db, [:data link-id :- s/Str user :- s/Str]]
   (mc/update db :links
              {:_id link-id
