@@ -14,8 +14,8 @@
              :swagger-ui {:path "/api-docs"}
              :core {:handlers {:foo {:ping #'ping}
                                :links 'backend.api}
-                    :user {:backend.api/load-link api/load-link
-                           :backend.api/liked? api/require-liked}
+                    :user {::api/load-link api/load-link
+                           ::api/liked? api/require-liked}
                     :context (palikka/create-context system)}
              :mw {:format {:params-opts {:transit-json {:handlers transit/readers}}
                            :response-opts {:transit-json {:handlers transit/writers}}}}}))
