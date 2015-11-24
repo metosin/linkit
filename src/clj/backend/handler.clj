@@ -3,7 +3,7 @@
             [backend.static :as static]
             [kekkonen.cqrs :refer :all]
             [metosin.ring.util.cache :as cache]
-            [metosin.transit :as transit]
+            [metosin.transit.dates :as transit-dates]
             [palikka.core :as palikka]))
 
 (defn ^:query ping [_]
@@ -17,8 +17,8 @@
                     :user {::api/load-link api/load-link
                            ::api/liked? api/require-liked}
                     :context (palikka/create-context system)}
-             :mw {:format {:params-opts {:transit-json {:handlers transit/readers}}
-                           :response-opts {:transit-json {:handlers transit/writers}}}}}))
+             :mw {:format {:params-opts {:transit-json {:handlers transit-dates/readers}}
+                           :response-opts {:transit-json {:handlers transit-dates/writers}}}}}))
 
 (defn create-handler [env system]
   ; Re-create kekkonen handler for each request if in dev-mode

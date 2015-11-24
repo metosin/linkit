@@ -4,7 +4,7 @@
             [cljs-http.core :as http-core]
             [cljs.core.async :as async :refer [<!]]
             [clojure.string :as string]
-            [metosin.transit :as transit]))
+            [metosin.transit.dates :as transit-dates]))
 
 (defn action->uri [action]
   {:pre [(keyword? action)]}
@@ -34,8 +34,8 @@
       :kekkonen {:client client
                  :action action
                  :data data}
-      :transit-opts {:encoding-opts {:handlers transit/writers}
-                     :decoding-opts {:handlers transit/readers}}})))
+      :transit-opts {:encoding-opts {:handlers transit-dates/writers}
+                     :decoding-opts {:handlers transit-dates/readers}}})))
 
 (def command (partial invoke :command))
 (def query (partial invoke :query))
