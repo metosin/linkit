@@ -56,27 +56,34 @@
 (defui Login
   static om/IQuery
   (query [this]
-    nil)
+    [:user/name])
 
   Object
   (render [this]
     (html
-      (let [{:keys [name]} (om/get-state this)]
-        [:div
-         {:style {:margin-bottom "40px"}}
-         [:h1 "Please identify yourself to transact with the system:"]
-         [:form
-          {:on-submit (fn [e]
-                        (.preventDefault e)
-                        (.stopPropagation e)
-                        (om/transact! this `[(user/set {:name ~name})
-                                             :user/name]))}
-          [:input {:type "text"
-                   :value name
-                   :on-change (fn [e]
-                                (om/update-state! this assoc :name (.. e -target -value)))}]
-          [:button {:type "submit"}
-           "Identify"]]]))))
+      (let [{:keys [user/name]} (om/props this)]
+        (if name
+          [:h1 "Hello " name
+           [:button.pull-right
+            {:type "button"
+             :on-click #(om/transact! this `[(user/reset)
+                                             :user/name])}
+            "Logout"]]
+          [:div
+           {:style {:margin-bottom "40px"}}
+           [:h1 "Please identify yourself to transact with the system:"]
+           [:form
+            {:on-submit (fn [e]
+                          (.preventDefault e)
+                          (.stopPropagation e)
+                          (om/transact! this `[(user/set {:name ~(:name (om/get-state this))})
+                                               :user/name]))}
+            [:input {:type "text"
+                     :value (:name (om/get-state this))
+                     :on-change (fn [e]
+                                  (om/update-state! this assoc :name (.. e -target -value)))}]
+            [:button {:type "submit"}
+             "Identify"]]])))))
 
 (def login (om/factory Login))
 
@@ -86,22 +93,19 @@
          nil)
 
   Object
-  (init-state [_]
-    {:url "http://"})
-
   (render [this]
     (let [{:keys [url]} (om/get-state this)]
       (html
         [:form
-         {:style {:margin-top "40px"}
+         {:style {:margin-top "40px" :margin-bottom "40px"}
           :on-submit (fn [e]
                        (.preventDefault e)
                        (.stopPropagation e)
                        (om/transact! this `[(links/add {:url ~url})
                                             :links/all])
-                       (om/update-state! this assoc :url "http://"))}
+                       (om/update-state! this assoc :url nil))}
          [:input {:type "text"
-                  :value url
+                  :value (or url "http://")
                   :on-change (fn [e]
                                (om/update-state! this assoc :url (.. e -target -value)))}]
          [:button {:type "submit"}
@@ -109,29 +113,33 @@
 
 (def new-link (om/factory NewLink))
 
-(defui Main
+(defui LinkList
   static om/IQuery
   (query [this]
     (let [subquery (om/get-query Link)]
-      `[:user/name {:links/all ~subquery}]))
+      `[{:links/all ~subquery}]))
+  Object
+  (render [this]
+    (let [{:keys [links/all]} (om/props this)]
+      (html
+        [:div.links
+         (for [x all]
+           (link x))]))))
+
+(def link-list (om/factory LinkList))
+
+(defui Main
+  static om/IQuery
+  (query [this]
+    (vec (concat (om/get-query Login) (om/get-query LinkList))))
   Object
   (render [this]
     (let [{:keys [user/name links/all]} (om/props this)]
-      (println "all" all)
       (html
         [:div
-         (if name
-           [:h1 "Hello " name
-            [:button.pull-right
-             {:type "button"
-              :on-click #(om/transact! this `[(user/reset)
-                                              :user/name])}
-             "Logout"]]
-           (login))
-         [:div.links
-          (for [x all]
-            (link x))
-          (new-link)]]))))
+         (login {:user/name name})
+         (link-list {:links/all all})
+         (new-link)]))))
 
 (defmulti read om/dispatch)
 
