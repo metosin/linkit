@@ -60,13 +60,13 @@
 ;; Initialization
 ;;
 
-(def client (kom/create-client {:base-uri "/"
-                                :params {:links/by-id (fn [id] {:link-id id})}}))
+(def client (kom/create-client {:base-uri "/"}))
 
 (def parser (om/parser {:read read :mutate mutate}))
 (def reconciler (om/reconciler {:state app-state
                                 :parser parser
                                 :send (:send client)
+                                :normalize true
                                 :shared-fn (fn [data]
                                              {:user/name (:user/name data)})
                                 :remotes [:remote :query]}))
@@ -78,7 +78,8 @@
 (defui Link
   static om/Ident
   (ident [this {:keys [_id]}]
-    [:links/by-id _id])
+    ; This identity is carefully chosen to match the Kekkonen Query
+    [:links/by-id {:link-id _id}])
   static om/IQuery
   (query [this]
     '[:_id :title :url :favicon :likes :likeUsers])
@@ -98,7 +99,7 @@
               :on-click (fn [e]
                           (om/transact! this `[(links/like {:link-id ~_id
                                                             :user ~name})
-                                               [:links/by-id ~_id]]))}
+                                               [:links/by-id {:link-id ~_id}]]))}
              "+"]
             [:button
              {:type "button"
@@ -106,7 +107,7 @@
               :on-click (fn [e]
                           (om/transact! this `[(links/dislike {:link-id ~_id
                                                                :user ~name})
-                                               [:links/by-id ~_id]]))}
+                                               [:links/by-id {:link-id ~_id}]]))}
              "-"]])
          (if favicon
            [:img {:src favicon :width 32 :height 32}]

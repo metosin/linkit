@@ -13,26 +13,25 @@
 
   FIXME: Can be optimized by running commands serial and queries parallel
   when there are no commands queued."
-  [{:keys [params]} ch client]
+  [ch client]
   (go
     (loop [[type x cb] (<! ch)]
       (case type
         :query
         (let [ast (om/query->ast x)
               {:keys [dispatch-key key]} (first (:children ast))
+              params (if (seqable? key) (second key))
               ; _ (println x)
               ; _ (pprint ast)
 
-              {:keys [body] :as res}
-              (<! (cqrs/query client dispatch-key (if-let [x (get params dispatch-key)]
-                                                    (x (second key)))))]
-
-          (if (ok? res)
-            ; FIXME: This be declarative somehow?
-            (case dispatch-key
-              :links/all (cb {:links/by-id (into {} (map (juxt :_id identity) body))
-                              :links/all (into [] (map (fn [{:keys [_id]}] [:links/by-id _id]) body))})
-              :links/by-id (cb {:links/by-id {(second key) body}}))))
+              res (<! (cqrs/query client dispatch-key params))]
+          (when (ok? res)
+            ; NOTE: (cb {:links/all [...]})
+            ; Results are automatically normalized
+            ;
+            ; NOTE: (cb {[:links/by-id ?] {...}})
+            ; When key is an identity, it's automatically merged to correct path
+            (cb {key (:body res)})))
 
         :command
         (let [[command params] (first x)]
@@ -54,5 +53,5 @@
 (defn create-client [opts]
   (let [ch (chan)
         client (cqrs/create-client opts)]
-    (remote-loop opts ch client)
+    (remote-loop ch client)
     {:send (send-to-chan ch client)}))
