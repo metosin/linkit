@@ -1,10 +1,10 @@
 (ns backend.handler
-  (:require [metosin.ring.util.cache :as cache]
-            [palikka.core :as palikka]
+  (:require [backend.api :as api]
             [backend.static :as static]
             [kekkonen.cqrs :refer :all]
-            [backend.api :as api]
-            [metosin.transit :as transit]))
+            [metosin.ring.util.cache :as cache]
+            [metosin.transit :as transit]
+            [palikka.core :as palikka]))
 
 (defn ^:query ping [_]
   (success {:ping "Pong"}))
@@ -14,8 +14,8 @@
              :swagger-ui {:path "/api-docs"}
              :core {:handlers {:foo {:ping #'ping}
                                :links 'backend.api}
-                    :user {:backend.api/load-link backend.api/load-link
-                           :backend.api/liked? backend.api/require-liked-or-fail}
+                    :user {:backend.api/load-link api/load-link
+                           :backend.api/liked? api/require-liked}
                     :context (palikka/create-context system)}
              :mw {:format {:params-opts {:transit-json {:handlers transit/readers}}
                            :response-opts {:transit-json {:handlers transit/writers}}}}}))

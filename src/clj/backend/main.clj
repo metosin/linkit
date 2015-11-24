@@ -1,6 +1,5 @@
 (ns backend.main
-  (:require [com.stuartsierra.component :as component]
-            [reloaded.repl :refer [set-init! go]])
+  (:require [reloaded.repl :refer [go set-init!]])
   (:gen-class))
 
 (defn init

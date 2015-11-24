@@ -1,13 +1,12 @@
 (ns backend.static
-  (:require [metosin.ring.util.cache :as cache]
-            [metosin.ring.util.hash :as hash]
-            [ring.util.codec :as codec]
-            [ring.util.request :as request]
-            [ring.util.http-response :refer [ok]]
-            [ring.middleware.resource :refer [resource-request]]
-            [hiccup.core :refer [html]]
+  (:require [hiccup.core :refer [html]]
             [hiccup.page :refer [html5 include-css include-js]]
-            [ring.util.http-response :as resp :refer [ok]]))
+            [metosin.ring.util.cache :as cache]
+            [metosin.ring.util.hash :as hash]
+            [ring.middleware.resource :refer [resource-request]]
+            [ring.util.codec :as codec]
+            [ring.util.http-response :as resp :refer [ok]]
+            [ring.util.request :as request]))
 
 (defn index-page [env devcards?]
   (html

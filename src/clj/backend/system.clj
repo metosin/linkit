@@ -1,12 +1,11 @@
 (ns backend.system
-  (:require [com.stuartsierra.component :as component :refer [using]]
+  (:require [backend.handler :refer [create-handler]]
+            [com.stuartsierra.component :as component :refer [using]]
             [maailma.core :as m]
-            [palikka.core :refer [providing]]
-            [palikka.handler :refer [wrap-env wrap-context]]
             [palikka.components.http-kit :as http-kit]
-            [palikka.components.nrepl :as nrepl]
             [palikka.components.mongo :as mongo]
-            [backend.handler :refer [create-handler]]))
+            [palikka.components.nrepl :as nrepl]
+            [palikka.core :refer [providing]]))
 
 (defn new-system [override]
   (let [env (m/build-config

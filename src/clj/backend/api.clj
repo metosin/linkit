@@ -1,13 +1,13 @@
 (ns backend.api
-  (:require [common.domain :as domain]
+  (:require [backend.impl :as impl]
+            [common.domain :as domain]
             [kekkonen.cqrs :refer :all]
-            [plumbing.core :refer [fnk defnk]]
-            [schema.core :as s]
             [metosin.dates :as dates]
-            [monger.operators :refer :all]
             [monger.collection :as mc]
             monger.joda-time
-            [backend.impl :as impl]))
+            [monger.operators :refer :all]
+            [plumbing.core :refer [defnk fnk]]
+            [schema.core :as s]))
 
 ;;
 ;; Context handlers

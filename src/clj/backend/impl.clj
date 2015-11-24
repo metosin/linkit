@@ -1,16 +1,15 @@
 (ns backend.impl
-  (:require [clojure.java.io :as io]
-            [clj-http.client :as http]
-            [ring.util.http-predicates :refer [ok?]]
-            [potpuri.core :as p]
-            [net.cgrand.enlive-html :as html]))
+  (:require [clj-http.client :as http]
+            [net.cgrand.enlive-html :as html]
+            [ring.util.http-predicates :refer [ok?]])
+  (:import java.net.URL))
 
 (defn get-info
   "Scrapes the given url's title and favicon."
   [url]
   (let [res (http/get url {:as :stream})]
     (if (ok? res)
-      (let [url' (java.net.URL. url)
+      (let [url' (URL. url)
             baseurl (str (.getProtocol url') "://" (.getHost url'))
             html (html/html-resource (:body res))
             icons (into {} (map (juxt :sizes :href) (map :attrs (html/select html [:head [:link (html/attr-has :rel "icon")]]))))
