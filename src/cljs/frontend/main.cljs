@@ -2,7 +2,8 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [kekkonen.client.om.next :as kom]
             [om.next :as om :refer-macros [defui]]
-            cljsjs.react.dom))
+            cljsjs.react.dom
+            [cljs.pprint :refer [pprint]]))
 
 (enable-console-print!)
 
@@ -20,13 +21,15 @@
   (let [st @state]
     (into [] (map #(get-in st %)) (get st key))))
 
-(defmethod read :default [{:keys [state]} key _]
+(defmethod read :default [{:keys [state] :as env} key _]
+  ; (pprint (dissoc env :state :parser))
   {:value (if (seqable? key)
             (get-in @state key)
             (get @state key))})
 
 (defmethod read :links/all
   [{:keys [state] :as env} key params]
+  ; (pprint @state)
   {:value (get-links state key)
    :query true})
 
@@ -197,3 +200,12 @@
   (om/add-root! reconciler Main (js/document.getElementById "app")))
 
 (init!)
+
+(comment
+  (om/transact! reconciler [:links/all])
+  (parser {:state app-state} [:links/all])
+  (parser {:state app-state} '[{:a {:links/all [*]}
+                                :b {:links/all [*]}}])
+
+  (om/tree->db Main {:links/all [{:_id "1" :url "abc"}
+                                 {:_id "2" :url "xyz"}]} true))
