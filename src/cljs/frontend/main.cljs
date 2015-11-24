@@ -10,6 +10,71 @@
                       :links/by-id {}
                       :links/all []}))
 
+;;
+;; Read handers
+;;
+
+(defmulti read om/dispatch)
+
+(defn get-links [state key]
+  (let [st @state]
+    (into [] (map #(get-in st %)) (get st key))))
+
+(defmethod read :default [{:keys [state]} key _]
+  {:value (if (seqable? key)
+            (get-in @state key)
+            (get @state key))})
+
+(defmethod read :links/all
+  [{:keys [state] :as env} key params]
+  {:value (get-links state key)
+   :query true})
+
+(defmethod read :links/by-id
+  [{:keys [state ast] :as env} key params]
+  {:value (get-in @state (:key ast))
+   :query true})
+
+;;
+;; Mutations
+;;
+;; Default is to send commands to backend. Some mutations are local.
+;;
+
+(defmulti mutate om/dispatch)
+
+(defmethod mutate :default [_ x params]
+  {:remote true})
+
+(defmethod mutate 'user/set [{:keys [state]} key params]
+  {:action (fn []
+             (goog.object/set js/localStorage "name" (:name params))
+             (swap! state assoc :user/name (:name params)))})
+
+(defmethod mutate 'user/reset [{:keys [state]} key _]
+  {:action (fn []
+             (goog.object/remove js/localStorage "name")
+             (swap! state assoc :user/name nil))})
+
+;;
+;; Initialization
+;;
+
+(def client (kom/create-client {:base-uri "/"
+                                :params {:links/by-id (fn [id] {:link-id id})}}))
+
+(def parser (om/parser {:read read :mutate mutate}))
+(def reconciler (om/reconciler {:state app-state
+                                :parser parser
+                                :send (:send client)
+                                :shared-fn (fn [data]
+                                             {:user/name (:user/name data)})
+                                :remotes [:remote :query]}))
+
+;;
+;; Components
+;;
+
 (defui Link
   static om/Ident
   (ident [this {:keys [_id]}]
@@ -87,10 +152,6 @@
 (def login (om/factory Login))
 
 (defui NewLink
-  static om/IQuery
-  (query [this]
-         nil)
-
   Object
   (render [this]
     (let [{:keys [url]} (om/get-state this)]
@@ -100,8 +161,11 @@
           :on-submit (fn [e]
                        (.preventDefault e)
                        (.stopPropagation e)
-                       (om/transact! this `[(links/add {:url ~url})
-                                            :links/all])
+                       ; NOTE: Component without query can't run transactions againt itself.
+                       ; Transactions can however be run against reconciler.
+                       ; NOTE: https://github.com/omcljs/om/wiki/Temporary-Identity
+                       (om/transact! reconciler `[(links/add {:url ~url})
+                                                  :links/all])
                        (om/update-state! this assoc :url nil))}
          [:input {:type "text"
                   :value (or url "http://")
@@ -112,80 +176,21 @@
 
 (def new-link (om/factory NewLink))
 
-(defui LinkList
-  static om/IQuery
-  (query [this]
-    (let [subquery (om/get-query Link)]
-      `[{:links/all ~subquery}]))
-  Object
-  (render [this]
-    (let [{:keys [links/all]} (om/props this)]
-      (html
-        [:div.links
-         (for [x all]
-           (link x))]))))
-
-(def link-list (om/factory LinkList))
-
 (defui Main
   static om/IQuery
   (query [this]
-    (vec (concat (om/get-query Login) (om/get-query LinkList))))
+    (let [subquery (om/get-query Link)]
+      `[:user/name {:links/all ~subquery}]))
   Object
   (render [this]
     (let [{:keys [user/name links/all]} (om/props this)]
       (html
         [:div
          (login {:user/name name})
-         (link-list {:links/all all})
+         [:div.links
+          (for [x all]
+            (link x))]
          (new-link)]))))
-
-(defmulti read om/dispatch)
-
-(defn get-links [state key]
-  (let [st @state]
-    (into [] (map #(get-in st %)) (get st key))))
-
-(defmethod read :default [{:keys [state]} key _]
-  {:value (if (seqable? key)
-            (get-in @state key)
-            (get @state key))})
-
-(defmethod read :links/all
-  [{:keys [state ast] :as env} key params]
-  {:value (get-links state key)
-   :query ast})
-
-(defmethod read :links/by-id
-  [{:keys [state ast] :as env} key params]
-  (println ast)
-  {:value (get-in @state (:key ast))
-   :query ast})
-
-(defmulti mutate om/dispatch)
-
-(defmethod mutate :default [_ x params]
-  {:remote true})
-
-(defmethod mutate 'user/set [{:keys [state]} key params]
-  {:action (fn []
-             (goog.object/set js/localStorage "name" (:name params))
-             (swap! state assoc :user/name (:name params)))})
-
-(defmethod mutate 'user/reset [{:keys [state]} key _]
-  {:action (fn []
-             (goog.object/remove js/localStorage "name")
-             (swap! state assoc :user/name nil))})
-
-(def client (kom/create-client {:base-uri "/"}))
-
-(def parser (om/parser {:read read :mutate mutate}))
-(def reconciler (om/reconciler {:state app-state
-                                :parser parser
-                                :send (:send-to-chan client)
-                                :shared-fn (fn [data]
-                                             {:user/name (:user/name data)})
-                                :remotes [:remote :query :command]}))
 
 (defn init! []
   (om/add-root! reconciler Main (js/document.getElementById "app")))

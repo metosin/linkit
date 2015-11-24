@@ -3,41 +3,56 @@
   (:require [cljs.core.async :refer [<! chan put!]]
             [kekkonen.client.cqrs :as cqrs]
             [ring.util.http-predicates :refer [ok?]]
-            [om.next :as om]))
+            [om.next :as om]
+            [cljs.pprint :refer [pprint]]))
 
-(defn remote-loop [ch client]
+(defn remote-loop
+  "Runs queries and commands serial. It's important to run queries and
+  commands in order so that the side-effects done by commands are
+  executed before the query triggered by transaction sees the side-effects.
+
+  FIXME: Can be optimized by running commands serial and queries parallel
+  when there are no commands queued."
+  [{:keys [params]} ch client]
   (go
     (loop [[type x cb] (<! ch)]
       (case type
         :query
-        (let [[query params] (if (coll? x) x [x])
-              {:keys [body] :as res} (<! (cqrs/query client query (case query
-                                                                    :links/by-id {:link-id params}
-                                                                    nil)))]
+        (let [ast (om/query->ast x)
+              {:keys [dispatch-key key]} (first (:children ast))
+              ; _ (println x)
+              ; _ (pprint ast)
+
+              {:keys [body] :as res}
+              (<! (cqrs/query client dispatch-key (if-let [x (get params dispatch-key)]
+                                                    (x (second key)))))]
+
           (if (ok? res)
-            ; FIXME: This should probably be declarative somehow?
-            (case query
+            ; FIXME: This be declarative somehow?
+            (case dispatch-key
               :links/all (cb {:links/by-id (into {} (map (juxt :_id identity) body))
                               :links/all (into [] (map (fn [{:keys [_id]}] [:links/by-id _id]) body))})
-              :links/by-id (cb {:links/by-id {params body}}))))
+              :links/by-id (cb {:links/by-id {(second key) body}}))))
 
         :command
-        (let [[command params] x]
+        (let [[command params] (first x)]
+          ; (println x)
           (<! (cqrs/command client (keyword command) params))))
 
       (recur (<! ch)))))
 
-(defn send-to-chan [ch client]
-  (fn [{:keys [query remote state] :as env} cb]
+(defn send-to-chan
+  "Creates Om Next send function."
+  [ch client]
+  (fn [{:keys [query remote] :as env} cb]
     ; If same transaction has both command and query, commands should be executed first
     (when remote
-      (put! ch [:command (first remote) cb]))
+      (put! ch [:command remote cb]))
     (when query
-      (let [{[x] :children} (om/query->ast query)]
-        (put! ch [:query (:key x) cb])))))
+      (put! ch [:query query cb]))))
 
 (defn create-client [opts]
   (let [ch (chan)
-        cqrs (cqrs/create-client opts)]
-    (remote-loop ch client)
-    {:send-to-chan (send-to-chan ch client)}))
+        client (cqrs/create-client opts)]
+    (remote-loop opts ch client)
+    {:send (send-to-chan ch client)}))
