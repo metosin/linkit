@@ -1,16 +1,10 @@
 (ns frontend.main
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :refer [<! chan put!]]
-            [sablono.core :as html :refer-macros [html]]
-            [kekkonen.client.cqrs :as cqrs]
-            [potpuri.core :as potpuri]
+  (:require [sablono.core :as html :refer-macros [html]]
+            [kekkonen.client.om.next :as kom]
             [om.next :as om :refer-macros [defui]]
-            [ring.util.http-predicates :refer [ok?]]
             cljsjs.react.dom))
 
 (enable-console-print!)
-
-(def client (cqrs/create-client {:base-uri ""}))
 
 (def app-state (atom {:user/name (goog.object/get js/localStorage "name")
                       :links/by-id {}
@@ -178,45 +172,12 @@
              (goog.object/remove js/localStorage "name")
              (swap! state assoc :user/name nil))})
 
-(def remote-chan (chan))
-
-(defn remote-loop [c]
-  (go
-    (loop [[type x cb] (<! c)]
-      (case type
-        :query
-        (let [[query params] (if (coll? x) x [x])
-              {:keys [body] :as res} (<! (cqrs/query client query (case query
-                                                                    :links/by-id {:link-id params}
-                                                                    nil)))]
-          (if (ok? res)
-            ; FIXME: This should probably be declarative somehow?
-            (case query
-              :links/all (cb {:links/by-id (into {} (map (juxt :_id identity) body))
-                              :links/all (into [] (map (fn [{:keys [_id]}] [:links/by-id _id]) body))})
-              :links/by-id (cb {:links/by-id {params body}}))))
-
-        :command
-        (let [[command params] x]
-          (<! (cqrs/command client (keyword command) params))))
-
-      (recur (<! c)))))
-
-(defn send-to-chan [remote-chan]
-  (fn [{:keys [query remote state] :as env} cb]
-    ; If same transaction has both command and query, commands should be executed first
-    (when remote
-      (put! remote-chan [:command (first remote) cb]))
-    (when query
-      (let [{[x] :children} (om/query->ast query)]
-        (put! remote-chan [:query (:key x) cb])))))
-
-(remote-loop remote-chan)
+(def client (kom/create-client {:base-uri "/"}))
 
 (def parser (om/parser {:read read :mutate mutate}))
 (def reconciler (om/reconciler {:state app-state
                                 :parser parser
-                                :send (send-to-chan remote-chan)
+                                :send (:send-to-chan client)
                                 :shared-fn (fn [data]
                                              {:user/name (:user/name data)})
                                 :remotes [:remote :query :command]}))
