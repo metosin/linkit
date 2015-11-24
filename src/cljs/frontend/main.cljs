@@ -16,27 +16,32 @@
     [:links/by-id _id])
   static om/IQuery
   (query [this]
-    '[:_id :title :url :favicon :likes])
+    '[:_id :title :url :favicon :likes :likeUsers])
   Object
   (render [this]
-    (let [{:keys [_id title url favicon likes] :as props} (om/props this)
-          {:keys [user/name]} (om/shared this)]
+    (let [{:keys [_id title url favicon likes likeUsers] :as props} (om/props this)
+          {:keys [user/name]} (om/shared this)
+          liked? (contains? (set likeUsers) name)]
       (html
         [:div.link
          [:span.likes likes]
          (if name
            [:div.buttons
-            [:button {:type "button"
-                      :on-click (fn [e]
-                                  (om/transact! this `[(links/like {:link-id ~_id
-                                                                    :user ~name})
-                                                       [:links/by-id ~_id]]))}
+            [:button
+             {:type "button"
+              :disabled liked?
+              :on-click (fn [e]
+                          (om/transact! this `[(links/like {:link-id ~_id
+                                                            :user ~name})
+                                               [:links/by-id ~_id]]))}
              "+"]
-            [:button {:type "button"
-                      :on-click (fn [e]
-                                  (om/transact! this `[(links/dislike {:link-id ~_id
-                                                                       :user ~name})
-                                                       [:links/by-id ~_id]]))}
+            [:button
+             {:type "button"
+              :disabled (not liked?)
+              :on-click (fn [e]
+                          (om/transact! this `[(links/dislike {:link-id ~_id
+                                                               :user ~name})
+                                               [:links/by-id ~_id]]))}
              "-"]])
          (if favicon
            [:img {:src favicon :width 32 :height 32}]

@@ -41,7 +41,7 @@
 (defnk ^:query all
   "Returns all the links"
   [db]
-  (success (mc/find-maps db :links nil {:likeUsers 0})))
+  (success (mc/find-maps db :links nil)))
 
 (defnk ^:query by-id
   "Returns a single link by given id"
