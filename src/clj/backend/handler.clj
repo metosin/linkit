@@ -21,10 +21,11 @@
                            :response-opts {:transit-json {:handlers transit/writers}}}}}))
 
 (defn create-handler [env system]
+  ; Re-create kekkonen handler for each request if in dev-mode
   (let [kekkonen (if (get-in env [:kekkonen :dev])
                    (fn [req] ((api env system) req))
                    (api env system))
-        static (static/static-handler env)]
+        static (static/static-handler {:dev-tools? (get-in env [:ui :dev-tools])})]
     (-> (fn [req]
           (or (static req)
               (kekkonen req)))
