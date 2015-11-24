@@ -5,7 +5,11 @@
             [palikka.components.http-kit :as http-kit]
             [palikka.components.mongo :as mongo]
             [palikka.components.nrepl :as nrepl]
-            [palikka.core :refer [providing]]))
+            [palikka.core :refer [providing]])
+  (:import [org.joda.time DateTimeZone]))
+
+; Default time-zone is UTC. Life is simple.
+(DateTimeZone/setDefault (DateTimeZone/forID "UTC"))
 
 (defn new-system [override]
   (let [env (m/build-config

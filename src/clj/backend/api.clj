@@ -2,12 +2,12 @@
   (:require [backend.impl :as impl]
             [common.domain :as domain]
             [kekkonen.cqrs :refer :all]
-            [metosin.dates :as dates]
             [monger.collection :as mc]
             monger.joda-time
             [monger.operators :refer :all]
             [plumbing.core :refer [defnk fnk]]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [org.joda.time DateTime]))
 
 ;;
 ;; Context handlers
@@ -59,7 +59,7 @@
   (try
     (mc/insert db :links (merge data
                                 (impl/get-info (:url data))
-                                {:dateTime (dates/now)
+                                {:dateTime (DateTime.)
                                  :_id (str (org.bson.types.ObjectId.))
                                  :likes 0
                                  :likeUsers #{}}))
