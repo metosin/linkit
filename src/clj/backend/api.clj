@@ -46,7 +46,7 @@
 (defnk ^:query by-id
   "Returns a single link by given id"
   {::load-link true}
-  [db [:entity link]]
+  [[:entity link]]
   (success link))
 
 ;;
