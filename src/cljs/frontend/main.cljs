@@ -17,7 +17,9 @@
 
 (defmulti read om/dispatch)
 
-(defn get-links [state key]
+(defn get-links
+  "Denormalizes list data for :links/all read."
+  [state key]
   (let [st @state]
     (into [] (map #(get-in st %)) (get st key))))
 
@@ -204,7 +206,9 @@
 (init!)
 
 (comment
+  (println "Hello")
   (om/transact! reconciler [:links/all])
+  (om/query->ast [:links/all])
   (parser {:state app-state} [:links/all])
   (parser {:state app-state} '[{:a {:links/all [*]}
                                 :b {:links/all [*]}}])
