@@ -29,7 +29,7 @@
                   [metosin/maailma "0.2.0"]
                   [metosin/ring-http-response "0.6.5"]
                   [metosin/ring-swagger-ui "2.1.3-2"]
-                  [metosin/kekkonen "0.1.0"]
+                  [metosin/kekkonen "0.1.1"]
                   [metosin/lokit "0.1.0"]
 
                   [hiccup "1.0.5"]
