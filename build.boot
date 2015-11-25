@@ -19,6 +19,7 @@
                   [ring/ring-devel "1.4.0"]
                   [ring/ring-defaults "0.1.5"]
                   [http-kit "2.1.19"]
+                  [jarohen/chord "0.6.0"]
 
                   [prismatic/schema "1.0.3"]
                   [prismatic/plumbing "0.5.2"]

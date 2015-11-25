@@ -1,5 +1,6 @@
 (ns backend.api
   (:require [backend.impl :as impl]
+            [backend.chord :as chord]
             [common.domain :as domain]
             [kekkonen.cqrs :refer :all]
             [monger.collection :as mc]
@@ -71,22 +72,24 @@
   "Adds like to the link if user hasn't liked this link already."
   {::load-link true
    ::liked? false}
-  [db, [:data link-id :- s/Str user :- s/Str]]
+  [db clients [:data link-id :- s/Str user :- s/Str]]
   (mc/update db :links
              {:_id link-id
               :likeUsers {$ne user}}
              {$addToSet {:likeUsers user}
               $inc {:likes 1}})
+  (chord/broadcast clients [:links/by-id {:link-id link-id}])
   (success {:status :ok}))
 
 (defnk ^:command dislike
   "Removes users like from the link."
   {::load-link true
    ::liked? true}
-  [db, [:data link-id :- s/Str user :- s/Str]]
+  [db clients [:data link-id :- s/Str user :- s/Str]]
   (mc/update db :links
              {:_id link-id
               :likeUsers user}
              {$pull {:likeUsers user}
               $inc {:likes -1}})
+  (chord/broadcast clients [:links/by-id {:link-id link-id}])
   (success {:status :ok}))

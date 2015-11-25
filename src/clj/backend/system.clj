@@ -1,5 +1,6 @@
 (ns backend.system
-  (:require [backend.handler :refer [create-handler]]
+  (:require [backend.chord :as chord]
+            [backend.handler :refer [create-handler]]
             [com.stuartsierra.component :as component :refer [using]]
             [maailma.core :as m]
             [palikka.components.http-kit :as http-kit]
@@ -18,7 +19,9 @@
     (component/map->SystemMap
       (cond-> {:mongo        (-> (mongo/create (:mongo env))
                                  (providing [:conn :db]))
+               :chord        (-> (chord/create)
+                                 (providing [:clients]))
                :http         (-> (http-kit/create (:http env) {:fn (partial create-handler env)})
                                  ; For context
-                                 (using [:mongo]))}
+                                 (using [:mongo :chord]))}
         (:nrepl env) (assoc :nrepl (nrepl/create (:nrepl env)))))))

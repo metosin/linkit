@@ -3,7 +3,8 @@
             [kekkonen.client.om.next :as kom]
             [om.next :as om :refer-macros [defui]]
             cljsjs.react.dom
-            [cljs.pprint :refer [pprint]]))
+            [cljs.pprint :refer [pprint]]
+            [frontend.chord :as chord]))
 
 (enable-console-print!)
 
@@ -199,7 +200,8 @@
          (new-link)]))))
 
 (defn init! []
-  (om/add-root! reconciler Main (js/document.getElementById "app")))
+  (om/add-root! reconciler Main (js/document.getElementById "app"))
+  (chord/connect reconciler))
 
 (init!)
 
