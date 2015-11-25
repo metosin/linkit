@@ -22,6 +22,8 @@
     (into [] (map #(get-in st %)) (get st key))))
 
 (defmethod read :default [{:keys [state] :as env} key _]
+  ; TODO: Default handler could do Kekkonen query, if a query with
+  ; given key exists.
   ; (pprint (dissoc env :state :parser))
   {:value (if (seqable? key)
             (get-in @state key)
