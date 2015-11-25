@@ -11,7 +11,8 @@
 
 (defn api [env system]
   (cqrs-api {:swagger {:info {:title "Linkit"}}
-             :swagger-ui {:path "/api-docs"}
+             :swagger-ui {:path "/api-docs"
+                          :validator-url nil}
              :core {:handlers {:foo {:ping #'ping}
                                :links 'backend.api}
                     :user {::api/load-link api/load-link
