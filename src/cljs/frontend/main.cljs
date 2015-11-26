@@ -7,7 +7,8 @@
 
 (enable-console-print!)
 
-(def app-state (atom {:user/name (goog.object/get js/localStorage "name")
+(def app-state (atom {:user (if-let [u (goog.object/get js/localStorage "name")]
+                              {:name u})
                       :links/by-id {}
                       :links/all []}))
 
@@ -49,12 +50,12 @@
 (defmethod mutate 'user/set [{:keys [state]} key params]
   {:action (fn []
              (goog.object/set js/localStorage "name" (:name params))
-             (swap! state assoc :user/name (:name params)))})
+             (swap! state assoc-in [:user :name] (:name params)))})
 
 (defmethod mutate 'user/reset [{:keys [state]} key _]
   {:action (fn []
              (goog.object/remove js/localStorage "name")
-             (swap! state assoc :user/name nil))})
+             (swap! state assoc :user nil))})
 
 ;;
 ;; Initialization
@@ -68,7 +69,7 @@
                                 :send (:send client)
                                 :normalize true
                                 :shared-fn (fn [data]
-                                             {:user/name (:user/name data)})
+                                             {:user (:user data)})
                                 :remotes [:remote :query]}))
 
 ;;
@@ -86,19 +87,19 @@
   Object
   (render [this]
     (let [{:keys [_id title url favicon likes likeUsers] :as props} (om/props this)
-          {:keys [user/name]} (om/shared this)
-          liked? (contains? (set likeUsers) name)]
+          {:keys [user]} (om/shared this)
+          liked? (contains? (set likeUsers) (:name user))]
       (html
         [:div.link
          [:span.likes likes]
-         (if name
+         (if user
            [:div.buttons
             [:button
              {:type "button"
               :disabled liked?
               :on-click (fn [e]
                           (om/transact! this `[(links/like {:link-id ~_id
-                                                            :user ~name})
+                                                            :user ~(:name user)})
                                                [:links/by-id {:link-id ~_id}]]))}
              "+"]
             [:button
@@ -106,7 +107,7 @@
               :disabled (not liked?)
               :on-click (fn [e]
                           (om/transact! this `[(links/dislike {:link-id ~_id
-                                                               :user ~name})
+                                                               :user ~(:name user)})
                                                [:links/by-id {:link-id ~_id}]]))}
              "-"]])
          (if favicon
@@ -121,18 +122,18 @@
 (defui Login
   static om/IQuery
   (query [this]
-    [:user/name])
+    [:user])
 
   Object
   (render [this]
     (html
-      (let [{:keys [user/name]} (om/props this)]
-        (if name
-          [:h1 "Hello " name
+      (let [{:keys [user]} (om/props this)]
+        (if (:name user)
+          [:h1 "Hello " (:name user)
            [:button.pull-right
             {:type "button"
              :on-click #(om/transact! this `[(user/reset)
-                                             :user/name])}
+                                             :user])}
             "Logout"]]
           [:div
            {:style {:margin-bottom "40px"}}
@@ -142,7 +143,7 @@
                           (.preventDefault e)
                           (.stopPropagation e)
                           (om/transact! this `[(user/set {:name ~(:name (om/get-state this))})
-                                               :user/name]))}
+                                               :user]))}
             [:input {:type "text"
                      :value (:name (om/get-state this))
                      :on-change (fn [e]
@@ -180,13 +181,13 @@
 (defui Main
   static om/IQuery
   (query [this]
-    [:user/name {:links/all (om/get-query Link)}])
+    [:user {:links/all (om/get-query Link)}])
   Object
   (render [this]
-    (let [{:keys [user/name links/all]} (om/props this)]
+    (let [{:keys [user links/all]} (om/props this)]
       (html
         [:div
-         (login {:user/name name})
+         (login {:user user})
          [:div.links
           (for [x all]
             (link x))]
