@@ -17,12 +17,6 @@
 
 (defmulti read om/dispatch)
 
-(defn get-links
-  "Denormalizes list data for :links/all read."
-  [state key]
-  (let [st @state]
-    (into [] (map #(get-in st %)) (get st key))))
-
 (defmethod read :default [{:keys [state] :as env} key _]
   ; TODO: Default handler could do Kekkonen query, if a query with
   ; given key exists.
@@ -32,9 +26,8 @@
             (get @state key))})
 
 (defmethod read :links/all
-  [{:keys [state] :as env} key params]
-  ; (pprint @state)
-  {:value (get-links state key)
+  [{:keys [state query] :as env} key params]
+  {:value (om/db->tree query (get @state key) @state)
    :query true})
 
 (defmethod read :links/by-id
