@@ -180,8 +180,7 @@
 (defui Main
   static om/IQuery
   (query [this]
-    (let [subquery (om/get-query Link)]
-      `[:user/name {:links/all ~subquery}]))
+    [:user/name {:links/all (om/get-query Link)}])
   Object
   (render [this]
     (let [{:keys [user/name links/all]} (om/props this)]
