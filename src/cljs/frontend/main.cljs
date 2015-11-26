@@ -68,8 +68,6 @@
                                 :parser parser
                                 :send (:send client)
                                 :normalize true
-                                :shared-fn (fn [data]
-                                             {:user (:user data)})
                                 :remotes [:remote :query]}))
 
 ;;
@@ -83,11 +81,10 @@
     [:links/by-id {:link-id _id}])
   static om/IQuery
   (query [this]
-    '[:_id :title :url :favicon :likes :likeUsers])
+    '[:_id :title :url :favicon :likes :likeUsers [:user _]])
   Object
   (render [this]
-    (let [{:keys [_id title url favicon likes likeUsers] :as props} (om/props this)
-          {:keys [user]} (om/shared this)
+    (let [{:keys [_id title url favicon likes likeUsers user] :as props} (om/props this)
           liked? (contains? (set likeUsers) (:name user))]
       (html
         [:div.link
